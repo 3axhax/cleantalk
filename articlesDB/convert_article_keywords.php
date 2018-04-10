@@ -155,4 +155,7 @@ class ArticlesKeywords
 }
 Article::convertArticleKeywords();
 echo '<br>';
+echo '<pre>';
+//print_r(Article::getArticleList());
+echo '</pre>';
 echo '<<<<<<<<<<<   END_SCRIPT   >>>>>>>>>>';

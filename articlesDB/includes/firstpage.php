@@ -45,7 +45,6 @@ class FirstPage extends CCS {
 
         $this->get_apps();
         $this->get_api();
-
         if (isset($_GET['new_site']))
 			setcookie('new_site', 1, null, '/');
 
@@ -63,43 +62,84 @@ class FirstPage extends CCS {
 
             $this->set_lead_source(null, true, true);
 
-            if ($this->ct_lang == 'ru')
-                $article = $this->db->select(sprintf("select a.article_id, a.article_title, a.article_content,
+            $this->page_info['new_design'] = true;
+            $this->page_info['show_footer'] = true;
+            $this->page_info['static_menu'] = true;
+
+            if (!isset($_REQUEST['keyword'])) {
+                if ($this->ct_lang == 'ru')
+                    $article = $this->db->select(sprintf("select a.article_id, a.article_title, a.article_content,
                                               a.keywords, a.description
                                               from articles a join links b
                                               on a.article_linkid = b.id
                                               where b.seo_url = %s AND a.article_status = '%s'",
-                                              $this->stringToDB($this->link->seo_url.'-ru'), 'PUBLIC'));
-            else
-                $article = $this->db->select(sprintf("select article_id, article_title, article_content,
+                        $this->stringToDB($this->link->seo_url . '-ru'), 'PUBLIC'));
+                else
+                    $article = $this->db->select(sprintf("select article_id, article_title, article_content,
                                                       keywords, description
                                                       from articles
-                                                      where article_linkid = %d AND `article_status` = '%s'",$this->link->id, 'PUBLIC'));
-            $this->page_info['new_design'] = true;
-            $this->page_info['show_footer'] = true;
-            $this->page_info['static_menu'] = true;
-            $this->page_info['article_title'] = $article['article_title'];
-            $article['article_content'] = str_replace(array('<p>beginphp</p>', '<p>endphp</p>'), array('beginphp', 'endphp'), $article['article_content']);
-            //$article['article_content'] = preg_replace('/<p>beginphp<\/p>([\n\r]*)<p>(.+)<\/p>([\n\r]*)<p>endphp<\/p>/isU','<pre class="brush: php; toolbar: false;">$2</pre>',$article['article_content']);
-            $article['article_content'] = preg_replace('#(beginphp)(.+)(endphp)#siU','<pre class="brush: php; toolbar: false;">$2</pre>', $article['article_content']);
-            $article['article_content'] = preg_replace('/<p>beginjs<\/p>([\n\r]*)<p>(.+)<\/p>([\n\r]*)<p>endjs<\/p>/i','<pre class="brush: jscript; toolbar: false;">$2</pre>',$article['article_content']);
-            $article['article_content'] = preg_replace('/<p>beginplain<\/p>([\n\r]*)<p>(.+)<\/p>([\n\r]*)<p>endplain<\/p>/i','<pre class="brush: plain; toolbar: false;">$2</pre>',$article['article_content']);
-            $article['article_content'] = str_replace('<br />', "\n", $article['article_content']);
+                                                      where article_linkid = %d AND `article_status` = '%s'", $this->link->id, 'PUBLIC'));
+
+                $this->page_info['article_title'] = $article['article_title'];
+                $article['article_content'] = str_replace(array('<p>beginphp</p>', '<p>endphp</p>'), array('beginphp', 'endphp'), $article['article_content']);
+                //$article['article_content'] = preg_replace('/<p>beginphp<\/p>([\n\r]*)<p>(.+)<\/p>([\n\r]*)<p>endphp<\/p>/isU','<pre class="brush: php; toolbar: false;">$2</pre>',$article['article_content']);
+                $article['article_content'] = preg_replace('#(beginphp)(.+)(endphp)#siU', '<pre class="brush: php; toolbar: false;">$2</pre>', $article['article_content']);
+                $article['article_content'] = preg_replace('/<p>beginjs<\/p>([\n\r]*)<p>(.+)<\/p>([\n\r]*)<p>endjs<\/p>/i', '<pre class="brush: jscript; toolbar: false;">$2</pre>', $article['article_content']);
+                $article['article_content'] = preg_replace('/<p>beginplain<\/p>([\n\r]*)<p>(.+)<\/p>([\n\r]*)<p>endplain<\/p>/i', '<pre class="brush: plain; toolbar: false;">$2</pre>', $article['article_content']);
+                $article['article_content'] = str_replace('<br />', "\n", $article['article_content']);
+
+                $this->page_info['head']['title'] = isset($article['article_title']) ? $article['article_title'] : '';
+                $this->page_info['article_content'] = $article['article_content'];
+
+
+                //Add block with New Articles in main help page
+
+                if (($this->link->id == 108) || ($this->link->id == 133)) {
+                    $article_status = 'PUBLIC';
+                    $last_articles = ($this->db->select(sprintf(
+                        "SELECT a.article_title, a.updated,
+                    b.seo_url 
+                    FROM articles a join links b on a.article_linkid = b.id 
+                    WHERE a.article_status = '%s' ORDER BY a.updated DESC LIMIT 0,5",
+                        $article_status),
+                        true));
+                    $this->page_info['last_articles'] = $last_articles;
+                }
+            }
+            else {
+                $keyword = $_REQUEST['keyword'];
+                $this->page_info['head']['keywords'] = $keyword;
+                $keyword_id = ($this->db->select(sprintf(
+                    "SELECT keyword_id 
+                    FROM articles_keywords 
+                    WHERE keyword = '%s'",
+                    $keyword)));
+                $articleContent = ($this->db->select(sprintf(
+                    "SELECT a.article_title, a.updated,
+                    b.seo_url
+                    FROM articles a join links b on a.article_linkid = b.id
+                    WHERE a.keywords REGEXP '(^|, )%d($|,)' ORDER BY a.updated DESC",
+                    $keyword_id['keyword_id']),
+                    true));
+                //print_r($articleContent);
+                $this->page_info['article_by_keyword'] = $articleContent;
+            }
+
 
             // Боковое меню
 
             $sidemenu = apc_fetch('sidemenu_'.$this->ct_lang);
-
             if (!$sidemenu)
                 $sidemenu = $this->get_sidemenu();
 
-            $this->page_info['cloud_data'] = $this->getWeightKeywords();
+            $weightKeywords = apc_fetch('cloud_teg_' . $this->ct_lang);
+            if (!$weightKeywords)
+                $weightKeywords = $this->getWeightKeywords();
 
-            $this->page_info['article_content'] = $article['article_content'];
-            $this->page_info['head']['keywords'] = isset($article['keywords']) ? $this->getKeywords($article['keywords']) : '';
+            $this->page_info['cloud_data'] = $weightKeywords;
+            if (!isset($this->page_info['head']['keywords'])) $this->page_info['head']['keywords'] = isset($article['keywords']) ? $this->getKeywords($article['keywords']) : '';
             $this->page_info['head']['meta_description'] = isset($article['description']) ? $article['description'] : '';
             $this->page_info['seo_url'] = $_SERVER['REQUEST_URI'];
-            $this->page_info['head']['title'] = isset($article['article_title']) ? $article['article_title'] : '';
             $this->page_info['show_search'] = true;
             $this->page_info['sidemenu'] = &$sidemenu;
             if (strstr($this->link->seo_url, 'install')){
@@ -119,7 +159,7 @@ class FirstPage extends CCS {
                 $template = 'includes/general.html';
             }
 
-            // find articles with same keywords
+            // Find articles with same keywords
 
             if (isset($article['keywords']))
             {
@@ -142,32 +182,18 @@ class FirstPage extends CCS {
                     $content = $interesting_articles[$i]['article_content'];
                     $content = strip_tags($content);
                     $content = substr($content, 0, strpos($content, ' ',  100)).' ...';
-                    //$content = substr($content, 0, 100).' ...';
                     $interesting_articles[$i]['article_content'] = $content;
                 }
                 $this->page_info['interesting_articles'] = $interesting_articles;
             }
 
-            //Add block with New Articles in main help page
-
-            if (($this->link->id == 108) || ($this->link->id == 133)) {
-                $article_status = 'PUBLIC';
-                $last_articles = ($this->db->select(sprintf(
-                    "SELECT a.article_title, a.updated,
-                    b.seo_url 
-                    FROM articles a join links b on a.article_linkid = b.id 
-                    WHERE a.article_status = '%s' ORDER BY a.updated DESC LIMIT 0,5",
-                    $article_status),
-                    true));
-                $this->page_info['last_articles'] = $last_articles;
-            }
 
             $this->page_info['deferred_css'] = array(
                 '/highlight/styles/shCore.css?v=25122015',
                 '/highlight/styles/shThemeDefault.css?v=25122015',
                 '/css/font-awesome.min.css?v=12052016',
                 '/css/sidemenu.min.css?v=26042017',
-                '/css/jqcloud.css'
+                '/css/jqcloud.css',
             );
 
             $this->page_info['scripts'] = array(
@@ -722,9 +748,11 @@ class FirstPage extends CCS {
         return implode(', ', $keywords);
     }
 
+    //Get list of keyword and its weight
+
     private function getWeightKeywords()
     {
-        $keywordsLimit = 20;
+        $keywordsLimit = 50; // limit keywords in cloud
         $keywords = array();
         $articleList = ($this->db->select(sprintf(
             "SELECT article_id, keywords
@@ -753,7 +781,8 @@ class FirstPage extends CCS {
             )));
             $keyString[$keywordRow['keyword']] = $weight;
         }
-        //print_r($keyString);
+
+        apc_store('cloud_teg_' . $this->ct_lang, $keyString);
         return $keyString;
     }
 
