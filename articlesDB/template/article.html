@@ -1,0 +1,93 @@
+<link href="/highlight/styles/shCore.css?v=25122015" rel="stylesheet" type="text/css" />
+<link href="/highlight/styles/shThemeDefault.css?v=25122015" rel="stylesheet" type="text/css" />
+<script src="/highlight/scripts/shCore.js" type="text/javascript"></script>
+<script src="/highlight/scripts/shAutoloader.js" type="text/javascript"></script>
+<script src="/highlight/scripts/shBrushPhp.js" type="text/javascript"></script>
+<script src="/highlight/scripts/shBrushPlain.js" type="text/javascript"></script>
+<script src="/highlight/scripts/shBrushJScript.js" type="text/javascript"></script>
+<script type="text/javascript">
+    SyntaxHighlighter.defaults['quick-code'] = false;
+    SyntaxHighlighter.all();
+</script>
+<link href="/css/sidemenu.css?v=12052016" rel="stylesheet" type="text/css" />
+<link href="/css/font-awesome.min.css?v=12052016" rel="stylesheet" type="text/css" />
+<script src="/js/jquery.min.js"></script>
+{if !$static_menu}
+<div class="sidemenu">
+<ul class="menu">
+    <li class="menu-button"><i class="fa fa-bars fa-2x" aria-hidden="true"></i>
+    </li>
+</ul>
+<ul class="menu-bar">
+    {foreach from=$sidemenu item=onemenuitem}
+ 	    <li>
+            <a href="{$onemenuitem.link}" class="show-sub">
+                {if $onemenuitem.subitems}
+                    <i class="fa fa-chevron-circle-down" aria-hidden="true"></i>
+                {/if}
+                {$onemenuitem.name}
+            </a>
+        </li>
+        {if $onemenuitem.subitems}
+            <li class="sub-item">
+                {foreach from=$onemenuitem.subitems item=onesubitem}
+                    <li><a href="{$onesubitem.link}">{$onesubitem.name}</a></li>
+                {/foreach}
+            </li>
+        {/if}
+    {/foreach}
+</ul>
+</div>
+{/if}
+<div class="tour {if $static_menu}sidemenu{/if}">
+	<div class="tour__container">
+        <br>
+        <a href="/">{if $ct_lang eq en}Home{else}Главная{/if}</a> › <a href="/help">{if $ct_lang eq en}Help{else}Помощь{/if}</a> › <a href="{$seo_url}">{$article_title}</a>
+	    <br><br>
+        {if $static_menu}
+        <div class="lefthelppart">
+            <ul class="menu-bar-stat">
+                {foreach from=$sidemenu item=onemenuitem}
+                <li>
+                    <a href="{$onemenuitem.link}" class="show-sub">
+                        {if $onemenuitem.subitems}
+                        <i class="fa fa-chevron-circle-down" aria-hidden="true"></i>
+                        {/if}
+                        {$onemenuitem.name}
+                    </a>
+                </li>
+                {if $onemenuitem.subitems}
+                <li class="sub-item"{if $show_instructions && $onemenuitem.id eq 9} style="display: inline;"{/if}>
+                <ul>
+                {foreach from=$onemenuitem.subitems item=onesubitem}
+                <li><a href="{$onesubitem.link}">{$onesubitem.name}</a></li>
+                {/foreach}
+                </ul>
+                </span>
+                {/if}
+                {/foreach}
+            </ul>
+        </div>
+        <div class="righthelppart" style="min-height: 500px">
+            {if $link_name}{$l_download_plugin} <a href="{$app_file}">{$link_name}</a>.<br><br>{/if}
+            {include file="messages/google_search.html"}
+            <div class="article content">{$article_content}</div>
+        </div>
+        {else}
+        {if $link_name}{$l_download_plugin} <a href="{$app_file}">{$link_name}</a>.<br><br>{/if}
+        {$article_content}
+        {/if}
+    </div>
+</div>
+{if $static_menu}
+<script>
+    window.addEventListener('load', function () {
+        $(".show-sub").click(function () {
+            $(this).blur();
+            $(this).parent().next('span').toggle();
+        });
+    });
+</script>
+{else}
+<script src="/js/sidemenu.js?v=05082016"></script>
+{/if}

@@ -6,3 +6,5 @@ CREATE TABLE `articles_keywords` (
 	`created` DATETIME NOT NULL , 
 	PRIMARY KEY (`keyword_id`))
 	ENGINE=MyISAM DEFAULT CHARSET=utf8;
+	
+UPDATE `articles` SET `article_status` = 'PUBLIC' WHERE `articles`.`article_id` <> 0;

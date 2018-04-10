@@ -24,7 +24,7 @@ class Db
         if (!isset(self::$db))
         {
             $params = self::$db_config;
-            $dsn = "{$params['type']}:host={$params['host']};dbname={$params['dbname']}";
+            $dsn = "{$params['type']}:host={$params['host']};dbname={$params['dbname']};";
             self::$db = new PDO($dsn, $params['user'], $params['password']);
         }
 
@@ -153,9 +153,6 @@ class ArticlesKeywords
         $sql->execute();
     }
 }
-$db = Db::getConnection();
-$string = file_get_contents('articles_for_help.sql');
-$sql = $db->prepare($string);
-$sql->execute();
 Article::convertArticleKeywords();
+echo '<br>';
 echo '<<<<<<<<<<<   END_SCRIPT   >>>>>>>>>>';
