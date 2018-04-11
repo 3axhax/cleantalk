@@ -97,7 +97,7 @@ class FirstPage extends CCS {
                 if (($this->link->id == 108) || ($this->link->id == 133)) {
                     $article_status = 'PUBLIC';
                     $last_articles = ($this->db->select(sprintf(
-                        "SELECT a.article_title, a.updated,
+                        "SELECT a.article_title,
                     b.seo_url 
                     FROM articles a join links b on a.article_linkid = b.id 
                     WHERE a.article_status = '%s' ORDER BY a.updated DESC LIMIT 0,5",
@@ -115,7 +115,7 @@ class FirstPage extends CCS {
                     WHERE keyword = '%s'",
                     $keyword)));
                 $articleContent = ($this->db->select(sprintf(
-                    "SELECT a.article_title, a.updated,
+                    "SELECT a.article_title,
                     b.seo_url
                     FROM articles a join links b on a.article_linkid = b.id
                     WHERE a.keywords REGEXP '(^|, )%d($|,)' ORDER BY a.updated DESC",
@@ -171,7 +171,7 @@ class FirstPage extends CCS {
                     $condition .= (($condition != '') ? " OR " : "" )."`keywords` REGEXP '(^|, )".$keyword."($|,)'";
                 }
                 $interesting_articles = ($this->db->select(sprintf(
-                    "SELECT a.article_title, a.updated, a.keywords, a.article_content,
+                    "SELECT a.article_title, a.keywords, a.article_content,
                     b.seo_url 
                     FROM articles a join links b on a.article_linkid = b.id 
                     WHERE article_id != %d AND a.article_status = '%s' AND (%s) ORDER BY a.updated DESC LIMIT 0,3",
