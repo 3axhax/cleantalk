@@ -1,0 +1,283 @@
+<div class="log-header row">
+    <div class="col-sm-12 col-md-12 col-lg-12">
+        <h2>{$head.title}</h2>
+        <button type="button" class="btn btn-primary btn-sm pull-right" id="new-record" style="margin-top: -40px;"><i class="fa fa-file-text-o" aria-hidden="true"></i> {$l_add_notification}</button>
+    </div>
+</div>
+
+<div class="well">
+    <form method="get" id="filter-form">
+
+        <select id="service" name="service" class="selectpicker" data-width="200px">
+            <option value="">{$l_logs_websites}</option>
+            {if $services}
+            <optgroup>
+                {foreach $services as $service}
+                <option value="{$service.service_id}" data-content="{if $service.favicon}<img src='{$service.favicon}' width='16' height='16'>{/if}{$service.hostname}"{if $service.service_id eq $smarty.get.service} selected{/if}>{$service.hostname}</option>
+                {/foreach}
+            </optgroup>
+            {/if}
+            {if $granted_services}
+            <optgroup label="---{$l_granted_services}---">
+                {foreach from=$granted_services item=onegservice key=gk}
+                <option value="{$onegservice.service_id}"{if $onegservice.service_id eq $smarty.get.service} selected{/if}>{if $onegservice.hostname}{$onegservice.hostname}{else}#{$onegservice.service_id}{/if}</option>
+                {/foreach}
+            </optgroup>
+            {/if}
+        </select>
+
+        <select id="event" name="event" class="selectpicker" data-width="200px">
+            <option value="">{$l_any_event}</option>
+            <option value="allowed"{if $smarty.get.event == 'allowed'} selected{/if}>{$l_allowed}</option>
+            <option value="denied"{if $smarty.get.event == 'denied'} selected{/if}>{$l_denied}</option>
+        </select>
+
+        <select id="method" name="method" class="selectpicker" data-width="200px">
+            <option value="">{$l_any_notification_method}</option>
+            <option value="email"{if $smarty.get.method == 'email'} selected{/if}>{$l_email}</option>
+            <option value="url"{if $smarty.get.method == 'url'} selected{/if}>URL</option>
+            <option value="apn"{if $smarty.get.method == 'apn'} selected{/if}>{$l_apn}</option>
+        </select>
+
+        <button type="submit" class="btn btn-default" id="filter-btn">{$l_show}</button>
+    </form>
+</div>
+<div class="panel panel-default">
+    <div class="panel-heading text-right">
+    	<div class="pull-left block-muted bulk-row">
+    		<input type="checkbox" name="" style="" class="pull-left select-all">
+    		<select id="bulk-action-top" class="selectpicker" data-width="130px" name="result" title="Bulk actions" disabled>
+	            <option value="enable">{$l_enable}</option>
+	            <option value="disable">{$l_disable}</option>
+	            <option value="delete">{$l_delete}</option>
+	        </select>
+	        <button type="button" class="btn btn-default disabled bulk-btn">{$l_apply}</button>
+    	</div>
+
+        <span id="records-found">{$records_found}</span> {$l_page} <span id="current-page">{$current_page}</span>{if $total_pages} {$l_of} <span id="total-pages">{$total_pages}</span>{/if}.
+
+
+        <div class="btn-group">
+            <nav aria-label="Page navigation">
+                <ul class="pagination" style="margin: 0; display: block;">
+                    {if $total_pages>1}
+                        {if $current_page==1}
+                            <li class="disabled"><span aria-hidden="true">«</span></li>
+                        {elseif $current_page==2}
+                            <li><a href="{$url}"><span aria-hidden="true">«</span></a></li>
+                        {else}
+                            <li><a href="{$url}&page={$current_page}"><span aria-hidden="true">«</span></a></li>
+                        {/if}
+                        {foreach $pages as $p}
+                            {if $current_page==$p}
+                                <li class="active"><span>{$p}</span></li>
+                            {else}
+                                {if $p==1}
+                                    <li><a href="{$url}">{$p}</a></li>
+                                {else}
+                                    <li><a href="{$url}&page={$p}">{$p}</a></li>
+                                {/if}
+                            {/if}                
+                        {/foreach}
+                        {if $current_page==$total_pages}
+                            <li class="disabled"><span aria-hidden="true">»</span></li>
+                        {else}
+                            <li><a href="{$url}&page={$current_page+1}"><span aria-hidden="true">»</span></a></li>
+                        {/if}
+                    {/if}
+                </ul>
+            </nav>
+        </div>
+    </div>
+    <table class="table table-hover simple-sort" id="notify-table">
+        <thead>
+        	<th style="width: 35px;"></th>
+            <th>{$l_site}</th>            
+            <th title="{$l_notify_event_hint}" data-toggle="tooltip" data-placement="top" data-container="body">{$l_notify_event}</th>
+            <th title="{$l_notify_method_hint}" data-toggle="tooltip" data-placement="top" data-container="body">{$l_notify_method}</th>
+            <th title="{$l_last_sent_hint}" data-toggle="tooltip" data-placement="top" data-container="body">{$l_last_sent}</th>
+            <th title="{$l_notifications_sent_hint}" data-toggle="tooltip" data-placement="top" data-container="body">{$l_notifications_sent}</th>
+            <th>{$l_actions}</th>
+        </thead>
+
+        <tbody>
+        {if $rows}
+        {foreach $rows as $row}
+        <tr class="log-row {if $row.status=='DISABLED'}text-muted{/if}">
+        	<td><input type="checkbox" class="r-check" value="{$row.notification_id}"></td>
+            <td>
+            	{if $row.favicon}
+                <img src="{$row.favicon}" width="16" height="16">
+                {/if}
+            	{$row.service_name}
+            </td>
+            <td>
+            	{if $row.allow==1}
+            		{$l_allowed}
+            	{else}
+            		{$l_denied}
+            	{/if}
+            </td>
+            <td>
+            	{if $row.type=="URL"}
+            		{$row.type} <span class="text-muted">{$row.notification_url}</span>
+            	{/if}
+            	{if $row.type=="EMAIL"}
+            		{$l_email}
+            	{/if}
+            	{if $row.type=="APN"}
+            		{$l_apn}
+            	{/if}
+            </td>
+            <td>{$row.last_sent}</td>
+            <td>{$row.notifications_sent}</td>
+            <td>
+            	{if $row.status=='ACTIVE'}
+            	<a href="#" title="{$l_disable}" class="a-btn disable"><i class="fa fa-bell-slash-o" aria-hidden="true"></i></a>
+            	{else}
+            	<a href="#" title="{$l_enable}" class="a-btn enable"><i class="fa fa-bell-o" aria-hidden="true"></i></a>
+            	{/if}
+            	<a href="#" title="{$l_delete}" class="a-btn delete"><i class="fa fa-trash"></i></a>
+            </td>
+        </tr>
+        {/foreach}
+        {else}
+        <tr>
+            <td colspan="7" class="text-center text-danger"><i class="glyphicon glyphicon-search"></i>&nbsp;&nbsp;{$l_log_no_data}</td>
+        </tr>
+        {/if}
+        </tbody>
+        
+    </table>
+    <div class="panel-footer text-right">
+    	<div class="pull-left block-muted bulk-row">
+    		<input type="checkbox" name="" style="" class="pull-left select-all">
+    		<select id="bulk-action-bot" class="selectpicker disabled" data-width="130px" name="result" title="Bulk actions">
+	            <option value="enable">{$l_enable}</option>
+	            <option value="disable">{$l_disable}</option>
+	            <option value="delete">{$l_delete}</option>
+	        </select>
+	        <button type="button" class="btn btn-default disabled bulk-btn">{$l_apply}</button>
+    	</div>
+        <nav aria-label="Page navigation">
+            <ul class="pagination" style="margin: 0;">
+                {if $total_pages>1}
+                    {if $current_page==1}
+                        <li class="disabled"><span aria-hidden="true">«</span></li>
+                    {elseif $current_page==2}
+                        <li><a href="{$url}"><span aria-hidden="true">«</span></a></li>
+                    {else}
+                        <li><a href="{$url}&page={$current_page}"><span aria-hidden="true">«</span></a></li>
+                    {/if}
+                    {foreach $pages as $p}
+                        {if $current_page==$p}
+                            <li class="active"><span>{$p}</span></li>
+                        {else}
+                            {if $p==1}
+                                <li><a href="{$url}">{$p}</a></li>
+                            {else}
+                                <li><a href="{$url}&page={$p}">{$p}</a></li>
+                            {/if}
+                        {/if}                
+                    {/foreach}
+                    {if $current_page==$total_pages}
+                        <li class="disabled"><span aria-hidden="true">»</span></li>
+                    {else}
+                        <li><a href="{$url}&page={$current_page+1}"><span aria-hidden="true">»</span></a></li>
+                    {/if}
+                {/if}
+            </ul>
+        </nav>
+    </div>
+</div>
+
+<div id="add-modal" class="modal fade" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-sm" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title">{$l_add_new_notification}</h4>
+            </div>
+            <div class="modal-body hidden" id="modal-loading">
+                <div class="text-center"><img src="/images/loading.gif"></div>
+            </div>
+            <div class="modal-body" id="modal-form">
+            	<div class="alert alert-danger hidden" role="alert" id="error-msg"></div>
+            	<div class="alert alert-success hidden" role="alert" id="success-msg"></div>
+            	<form method="post" id="new-form">
+            		<div class="form-group">
+            			<label for="new-service">{$l_site}</label>
+            			<select id="new-service" name="service" class="selectpicker" data-width="100%">
+				            <option value="">{$l_logs_websites}</option>
+				            {if $services}
+				            <optgroup>
+				                {foreach $services as $service}
+				                <option value="{$service.service_id}" data-content="{if $service.favicon}<img src='{$service.favicon}' width='16' height='16'>{/if}{$service.hostname}"{if $service.service_id eq $smarty.get.service} selected{/if}>{$service.hostname}</option>
+				                {/foreach}
+				            </optgroup>
+				            {/if}
+				            {if $granted_services}
+				            <optgroup label="---{$l_granted_services}---">
+				                {foreach from=$granted_services item=onegservice key=gk}
+				                <option value="{$onegservice.service_id}"{if $onegservice.service_id eq $smarty.get.service} selected{/if}>{if $onegservice.hostname}{$onegservice.hostname}{else}#{$onegservice.service_id}{/if}</option>
+				                {/foreach}
+				            </optgroup>
+				            {/if}
+				        </select>
+            		</div>
+            		<div class="form-group">
+            			<label for="new-event">{$l_notify_event_hint}</label>
+            			<select id="new-event" name="event" class="selectpicker" data-width="100%">
+				            <option value="">{$l_any_event}</option>
+				            <option value="allowed"{if $smarty.get.event == 'allowed'} selected{/if}>{$l_allowed}</option>
+				            <option value="denied"{if $smarty.get.event == 'denied'} selected{/if}>{$l_denied}</option>
+				        </select>
+            		</div>
+            		<div class="form-group">
+            			<label for="new-method">{$l_notify_method_hint}</label>
+				        <select id="new-method" name="method" class="selectpicker" data-width="100%">
+				            <option value="email"{if $smarty.get.method == 'email'} selected{/if}>{$l_email}</option>
+				            <option value="url"{if $smarty.get.method == 'url'} selected{/if}>URL</option>
+				            <option value="apn"{if $smarty.get.method == 'apn'} selected{/if}>{$l_apn}</option>
+				        </select>
+            		</div>
+            		<div class="form-group url-box hidden">
+            			<label for="new-url">URL</label>
+				        <input id="new-url" type="text" class="form-control" name="url" pattern="{literal}^(https?:\/\/)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)${/literal}" placeholder="https://example.com/example">
+				        <p class="text-muted small">{$l_url_hint}</p>
+            		</div>
+            		<div class="form-group text-center">
+            			<input type="submit" name="" value="{$l_add_notification}" class="btn btn-primary btn-block">
+            		</div>
+            	</form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{if $show_modal}
+{include file="tools/license_modal.html"}
+{/if}
+<div id="page-loader" class="hidden"><div class="ripple-loader"><div></div><div></div></div></div>
+<script>
+var l_log_no_data = '{$l_log_no_data}';
+var l_allowed = '{$l_allowed}';
+var l_denied = '{$l_denied}';
+var l_delete = '{$l_delete}';
+var l_disable = '{$l_disable}';
+var l_enable = '{$l_enable}';
+var l_apn = '{$l_apn}';
+var l_email = '{$l_email}';
+var l_records_exist = '{$l_records_exist}';
+var l_records_added = '{$l_records_added}';
+</script>
+<style type="text/css">
+.select-all{ margin: 10px 15px 0 0!important; }
+.block-muted{ opacity: .5; }
+.r-check{ margin-left: 7px!important; }
+.selected{ background-color: #f5f5f5;}
+.panel-heading, .panel-footer{ min-height: 55px; }
+.a-btn{ color: #777; margin-right: 10px; }
+.a-btn:hover{ color: #333; }
+#filter-form .bootstrap-select img, #new-form .bootstrap-select img{ margin: -2px 5px 0 0; }
+</style>
