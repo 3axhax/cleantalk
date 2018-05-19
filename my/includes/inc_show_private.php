@@ -1144,6 +1144,8 @@ if (!$this->check_access(null, true)) {
 	}
    
     $this->page_info['countries_data'] = $countries;
+	$private_lang = $this->get_private_lang();
+	$this->page_info['private_lang'] = $private_lang;
 }
 
 

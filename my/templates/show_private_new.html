@@ -243,11 +243,16 @@
                             <option value="{$country.countrycode}" class="flag {$country.countrycode|lower}">{$country.langname}</option>
                             {/foreach}
                         </select>-->
-                        <select class="selectpicker form-control" data-width="220px" data-size="10" id="languages-select" name="selected-languages[]">
+                        <select class="selectpicker form-control" data-width="220px" data-live-search="true" data-size="10" multiple data-actions-box="true" data-selected-text-format="count > 2" id="languages-select" name="selected-languages[]">
+                            {foreach $private_lang as $lang}
+                            <option value="lang_{$lang.lang_code}">{$lang.langname}</option>
+                            {/foreach}
+                        </select>
+                        <!--<select class="selectpicker form-control" data-width="220px" data-size="10" id="languages-select" name="selected-languages[]">
                             <option value="none" disabled selected>Выбрать язык</option>
                             <option value="1" class="">ru</option>
                             <option value="2" class="">en</option>
-                        </select>
+                        </select>-->
                         <select class="selectpicker form-control" data-width="220px" data-size="10" id="languages-status-select" name="languages_status">
                             <option value="deny">{$l_deny}</option>
                             <option value="allow">{$l_allow}</option>

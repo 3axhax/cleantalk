@@ -3913,6 +3913,18 @@ class Requests extends CCS {
         return $countries;
     }
 
+    public function get_private_lang(){
+        $private_lang = apc_fetch('private_lang_'.$this->ct_lang);
+        if (!$private_lang){
+            $private_lang = $this->db->select(sprintf("select lang_code, %s as langname 
+                                                     from bl_priv_language
+                                                     order by langname asc",
+                'lang_name_'.$this->ct_lang),true);
+            apc_store('private_lang_'.$this->ct_lang, $private_lang, 25000);
+        }
+        return $private_lang;
+    }
+
 }
 
 /*
