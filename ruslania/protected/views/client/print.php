@@ -1,0 +1,1 @@
+<?php $this->renderPartial('/client/_one_order', array('order' => $order)); ?>
